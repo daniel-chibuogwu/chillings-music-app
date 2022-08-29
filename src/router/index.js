@@ -4,6 +4,7 @@ import About from "@/views/About.vue";
 import Manage from "@/views/Manage.vue";
 import useUserStore from "@/stores/user";
 import ErrorPage from "@/views/404.vue";
+import Song from "@/views/SongPage.vue";
 
 const routes = [
   {
@@ -42,12 +43,21 @@ const routes = [
     path: "/:catchAll(.*)*",
     redirect: { name: "errorPage" },
   },
+  {
+    name: "song",
+    path: "/song/:id",
+    component: Song,
+  },
 ];
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
   linkExactActiveClass: "text-yellow-500",
+  scrollBehavior(to, from, savedPosition) {
+    // always scroll to top
+    return { top: 0 };
+  },
 });
 
 router.beforeEach((to, from, next) => {

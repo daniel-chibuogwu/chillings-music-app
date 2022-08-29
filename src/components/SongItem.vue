@@ -1,9 +1,13 @@
 <template>
   <li
-    class="flex text-gray-600 hover:text-green-400 justify-between items-center p-3 pl-6 cursor-pointer transition duration-300 hover:bg-[#041827] border-b border-b-[#041827]"
+    class="flex hover:text-green-300 text-[#106666] justify-between items-center p-3 pl-6 cursor-pointer transition duration-300 hover:bg-[#041827] border-b-2 border-b-[#041827]"
   >
     <div>
-      <a href="#" class="font-bold block">{{ song.modified_name }}</a>
+      <router-link
+        :to="{ name: 'song', params: { id: song.docID } }"
+        class="font-bold block hover:text-green-300"
+        >{{ song.modified_name }}</router-link
+      >
       <span class="text-gray-500 text-sm">{{ song.display_name }}</span>
     </div>
 

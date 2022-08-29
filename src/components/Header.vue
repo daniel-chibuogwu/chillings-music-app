@@ -1,6 +1,6 @@
 <template>
   <!-- Header -->
-  <header id="header" class="bg-[#01050b] fixed inset-x-0 top-0 z-[100]">
+  <header id="header" class="bg-[#041827]">
     <nav class="container mx-auto flex justify-start items-center py-5 px-4">
       <!-- App Name -->
       <router-link

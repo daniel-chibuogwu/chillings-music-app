@@ -1,6 +1,6 @@
 <template>
   <!-- Introduction -->
-  <section class="mb-10 py-48 text-white text-center relative">
+  <section class="mb-6 py-56 text-white text-center relative">
     <div
       class="absolute inset-0 w-full h-full bg-contain introduction-bg"
       style="background-image: url(assets/img/newbanner.jpeg)"
@@ -25,9 +25,11 @@
   <!-- Main Content -->
   <section class="container mx-auto">
     <div
-      class="bg-[#01050b] rounded border border-[#0d555d] relative flex flex-col"
+      class="bg-[#01050b] rounded-t-lg border-x border-b border-[#041827] relative flex flex-col"
     >
-      <div class="px-6 pt-6 pb-5 font-bold border-b border-[#0d555d]">
+      <div
+        class="text-green-400 px-6 pt-3 pb-3 font-bold border-b-8 border-[#041827]"
+      >
         <span class="card-title">Songs</span>
         <!-- Icon -->
         <i class="fa fa-headphones-alt float-right text-green-400 text-xl"></i>
@@ -51,7 +53,7 @@ export default {
   data() {
     return {
       songs: [],
-      maxPerPage: 16,
+      maxPerPage: 5,
       pendingRequest: false,
     };
   },
