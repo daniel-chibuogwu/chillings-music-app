@@ -25,7 +25,7 @@
     <div class="bg-white rounded border border-gray-200 relative flex flex-col">
       <div class="px-6 pt-6 pb-5 font-bold border-b border-gray-200">
         <!-- Comment Count -->
-        <span class="card-title">Comments (15)</span>
+        <span class="card-title">Comments ({{ song.comment_count }})</span>
         <i class="fa fa-comments float-right text-green-400 text-2xl"></i>
       </div>
       <div class="p-6">
@@ -132,7 +132,12 @@ export default {
       return;
     }
 
+    //for persisting the sorting
+    const { sort } = this.$route.query;
+    this.sort = sort === "1" || sort === "2" ? sort : "1";
+
     this.song = docSnapshot.data();
+    // this is for getting the comments
     await this.getComments();
   },
   methods: {
@@ -150,8 +155,11 @@ export default {
         name: auth.currentUser.displayName,
         uid: auth.currentUser.uid,
       };
-
       await commentsCollection.add(comment); // we are letting firebase create an ID for us.
+      this.song.comment_count += 1; // we are not using the ++ operator here because EsLint doesn't support it.
+      await songsCollection.doc(this.$route.params.id).update({
+        comment_count: this.song.comment_count,
+      });
       await this.getComments();
       this.comment_in_submission = false;
       // this.comment_show_alert = true;
@@ -172,6 +180,19 @@ export default {
           docID: doc.id,
           ...doc.data(),
         });
+      });
+    },
+  },
+  watch: {
+    sort(newVal) {
+      if (newVal === this.$route.query.sort) {
+        //this is to avoid vue from throwing an error when trying to revisit thesame url
+        return;
+      }
+      this.$router.push({
+        query: {
+          sort: newVal,
+        },
       });
     },
   },
