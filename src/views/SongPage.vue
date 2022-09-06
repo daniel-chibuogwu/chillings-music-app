@@ -3,7 +3,7 @@
   <section class="w-full mb-8 py-14 text-center text-white relative">
     <div
       class="absolute inset-0 w-full h-full box-border bg-contain music-bg"
-      style="background-image: url(/assets/img/song-header.png)"
+      style="background-image: url('/assets/img/song-header.png')"
     ></div>
     <div class="container mx-auto flex items-center">
       <!-- Play/Pause Button -->
@@ -15,8 +15,8 @@
       </button>
       <div class="z-50 text-left ml-8">
         <!-- Song Info -->
-        <div class="text-3xl font-bold">{{ song.title }}</div>
-        <div>Rock</div>
+        <div class="text-3xl font-bold">{{ song.modified_name }}</div>
+        <div>{{ song?.genre }}</div>
       </div>
     </div>
   </section>
@@ -29,20 +29,37 @@
         <i class="fa fa-comments float-right text-green-400 text-2xl"></i>
       </div>
       <div class="p-6">
-        <form>
-          <textarea
-            class="block w-full py-1.5 px-3 text-gray-800 border border-gray-300 transition duration-500 focus:outline-none focus:border-black rounded mb-4"
+        <!--        Alert Box -->
+        <div
+          v-if="comment_show_alert"
+          class="text-white text-center font-bold p-4 mb-4"
+          :class="comment_alert_variant"
+        >
+          {{ comment_alert_message }}
+        </div>
+        <vee-form
+          :validation-schema="schema"
+          @submit="addComment"
+          v-if="userLoggedIn"
+        >
+          <vee-field
+            as="textarea"
+            name="comment"
+            class="block w-full py-1.5 px-3 text-gray-800 border border-gray-300 transition duration-500 focus:outline-none focus:border-black rounded mb-3"
             placeholder="Your comment here..."
-          ></textarea>
+          />
+          <ErrorMessage name="comment" class="block text-red-600 mb-3" />
           <button
             type="submit"
             class="py-1.5 px-3 rounded text-white bg-green-600 block"
+            :disabled="comment_in_submission"
           >
             Submit
           </button>
-        </form>
+        </vee-form>
         <!-- Sort Comments -->
         <select
+          v-model="sort"
           class="block mt-4 py-1.5 px-3 text-gray-800 border border-gray-300 transition duration-500 focus:outline-none focus:border-black rounded"
         >
           <option value="1">Latest</option>
@@ -53,94 +70,110 @@
   </section>
   <!-- Comments -->
   <ul class="container mx-auto">
-    <li class="p-6 bg-gray-50 border border-gray-200">
+    <li
+      class="p-6 bg-gray-50 border border-gray-200"
+      v-for="comment in sortedComments"
+      :key="comment.docID"
+    >
       <!-- Comment Author -->
       <div class="mb-5">
-        <div class="font-bold">Elaine Dreyfuss</div>
-        <time>5 mins ago</time>
+        <div class="font-bold">{{ comment.name }}</div>
+        <time>{{ comment.datePosted }}</time>
       </div>
 
       <p>
-        Sed ut perspiciatis unde omnis iste natus error sit voluptatem
-        accusantium der doloremque laudantium.
-      </p>
-    </li>
-    <li class="p-6 bg-gray-50 border border-gray-200">
-      <!-- Comment Author -->
-      <div class="mb-5">
-        <div class="font-bold">Elaine Dreyfuss</div>
-        <time>5 mins ago</time>
-      </div>
-
-      <p>
-        Sed ut perspiciatis unde omnis iste natus error sit voluptatem
-        accusantium der doloremque laudantium.
-      </p>
-    </li>
-    <li class="p-6 bg-gray-50 border border-gray-200">
-      <!-- Comment Author -->
-      <div class="mb-5">
-        <div class="font-bold">Elaine Dreyfuss</div>
-        <time>5 mins ago</time>
-      </div>
-
-      <p>
-        Sed ut perspiciatis unde omnis iste natus error sit voluptatem
-        accusantium der doloremque laudantium.
-      </p>
-    </li>
-    <li class="p-6 bg-gray-50 border border-gray-200">
-      <!-- Comment Author -->
-      <div class="mb-5">
-        <div class="font-bold">Elaine Dreyfuss</div>
-        <time>5 mins ago</time>
-      </div>
-
-      <p>
-        Sed ut perspiciatis unde omnis iste natus error sit voluptatem
-        accusantium der doloremque laudantium.
-      </p>
-    </li>
-    <li class="p-6 bg-gray-50 border border-gray-200">
-      <!-- Comment Author -->
-      <div class="mb-5">
-        <div class="font-bold">Elaine Dreyfuss</div>
-        <time>5 mins ago</time>
-      </div>
-
-      <p>
-        Sed ut perspiciatis unde omnis iste natus error sit voluptatem
-        accusantium der doloremque laudantium.
-      </p>
-    </li>
-    <li class="p-6 bg-gray-50 border border-gray-200">
-      <!-- Comment Author -->
-      <div class="mb-5">
-        <div class="font-bold">Elaine Dreyfuss</div>
-        <time>5 mins ago</time>
-      </div>
-
-      <p>
-        Sed ut perspiciatis unde omnis iste natus error sit voluptatem
-        accusantium der doloremque laudantium.
+        {{ comment.content }}
       </p>
     </li>
   </ul>
 </template>
 
 <script>
-import { songsCollection } from "../includes/firebase";
+import {
+  auth,
+  songsCollection,
+  commentsCollection,
+} from "../includes/firebase";
+import { mapState } from "pinia";
+import useUserStore from "@/stores/user";
 
 export default {
   name: "SongPage",
   data() {
     return {
       song: {},
+      schema: {
+        comment: "required|min:3",
+      },
+      comment_in_submission: false,
+      comment_show_alert: false,
+      comment_alert_variant: "bg-blue-500",
+      comment_alert_message: "Please wait! Your comment is being submitted",
+      comments: [],
+      sort: "1",
     };
   },
+  computed: {
+    ...mapState(useUserStore, ["userLoggedIn"]),
+    sortedComments() {
+      return this.comments.slice().sort((a, b) => {
+        if (this.sort === "1") {
+          return new Date(b.datePosted) - new Date(a.datePosted); // here we are just passing in the stringyfied date to be converted to date object and the return function is to sort it if b comes before a or vice versa
+        }
+        return new Date(a.datePosted) - new Date(b.datePosted); // if b comes before a, we have ascending, otherwise it descends and if they're are equal they remain in their current position.
+      });
+    },
+  },
   async created() {
-    const songSnapshot = await songsCollection.doc(this.$route.params.id).get();
-    this.song.title = songSnapshot.data().modified_name;
+    const docSnapshot = await songsCollection.doc(this.$route.params.id).get();
+
+    if (!docSnapshot.exists) {
+      this.$router.push({ name: "home" });
+      return;
+    }
+
+    this.song = docSnapshot.data();
+    await this.getComments();
+  },
+  methods: {
+    async addComment(values, { resetForm }) {
+      this.comment_in_submission = true;
+      this.comment_show_alert = true;
+      this.comment_alert_variant = "bg-blue-500"; // this is done incase the user tries submitting multiple times to that the color variant of the alert box can be reset too.
+      this.comment_alert_message =
+        "Please wait! Your comment is being submitted";
+
+      const comment = {
+        content: values.comment,
+        datePosted: new Date().toString(), // we are calling the toString method because firebase can't store a data value in it's database, it would be an invalid value.
+        sid: this.$route.params.id,
+        name: auth.currentUser.displayName,
+        uid: auth.currentUser.uid,
+      };
+
+      await commentsCollection.add(comment); // we are letting firebase create an ID for us.
+      await this.getComments();
+      this.comment_in_submission = false;
+      // this.comment_show_alert = true;
+      this.comment_alert_variant = "bg-green-500"; // this is done incase the user tries submitting multiple times to that the color variant of the alert box can be reset too.
+      this.comment_alert_message = "Comment added!";
+
+      resetForm();
+    },
+    async getComments() {
+      const snapshots = await commentsCollection
+        .where("sid", "==", this.$route.params.id)
+        .get();
+
+      this.comments = []; // we are resetting the comments array so that we don't have duplicate comments.
+
+      snapshots.forEach((doc) => {
+        this.comments.push({
+          docID: doc.id,
+          ...doc.data(),
+        });
+      });
+    },
   },
 };
 </script>
